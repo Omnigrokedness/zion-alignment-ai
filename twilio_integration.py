@@ -320,6 +320,14 @@ def process_transcript():
                             search_terms = "holy spirit"
                             logger.info("Search term contains 'spirit', refined to 'holy spirit'")
                     
+                    # Special handling for endurance/enduring variations
+                    if "endure to the end" in search_terms_lower:
+                        search_terms = "enduring to the end"
+                        logger.info("Search term contains 'endure to the end', refined to 'enduring to the end'")
+                    elif "endure" in search_terms_lower and "endurance" not in search_terms_lower:
+                        search_terms = "endurance"
+                        logger.info("Search term contains 'endure', refined to 'endurance'")
+                    
                     # If the search term has multiple words, try to identify the main subject
                     if len(search_terms.split()) > 3:
                         # Look for keywords in our database to focus the search
@@ -624,6 +632,14 @@ def simulate_voice_interaction():
                     if "walk by" in search_terms_lower or "led by" in search_terms_lower:
                         search_terms = "holy spirit"
                         logger.info("Search term contains 'spirit', refined to 'holy spirit'")
+                
+                # Special handling for endurance/enduring variations
+                if "endure to the end" in search_terms_lower:
+                    search_terms = "enduring to the end"
+                    logger.info("Search term contains 'endure to the end', refined to 'enduring to the end'")
+                elif "endure" in search_terms_lower and "endurance" not in search_terms_lower:
+                    search_terms = "endurance"
+                    logger.info("Search term contains 'endure', refined to 'endurance'")
                 
                 # If the search term has multiple words, try to identify the main subject
                 if len(search_terms.split()) > 3:
