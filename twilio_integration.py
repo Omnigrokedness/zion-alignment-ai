@@ -117,10 +117,66 @@ def process_transcript():
         if call_log:
             call_log.transcript = transcript
             
-            # Simple response generation until we can install ML libraries
+            # Try to use the LLM handler if available, otherwise use rule-based responses
             response = "Thank you for your contribution to Zion's knowledge."
             
-            # Check if this is a truth to store
+            # Attempt to use LLM to analyze the transcript
+            try:
+                from llm_handler import generate_text
+                
+                # Create prompt that classifies the intent and generates a response
+                prompt = f"""Classify the following transcript from a voice call and generate an appropriate response:
+                
+                Transcript: "{transcript}"
+                
+                Possible intents:
+                1. Store a truth (if contains phrases like "store this truth", "remember this", etc.)
+                2. Ask a question (if asking for information)
+                3. Search for information (if requesting knowledge on a topic)
+                4. General conversation
+                
+                If intent is to store a truth, extract the truth content.
+                """
+                
+                # Try to get LLM response
+                llm_response = generate_text({"prompt": prompt, "max_length": 512})
+                
+                if isinstance(llm_response, dict) and "response" in llm_response:
+                    logger.info("Using LLM-generated response")
+                    
+                    # The LLM should have classified the intent, but we'll still use our rules as a backup
+                    if "intent: store" in llm_response["response"].lower():
+                        # Check if LLM extracted the truth content
+                        if "truth content:" in llm_response["response"].lower():
+                            truth_parts = llm_response["response"].lower().split("truth content:", 1)
+                            if len(truth_parts) > 1:
+                                extracted_content = truth_parts[1].strip()
+                                
+                                # Use the LLM-extracted content
+                                truth_content = extracted_content
+                                logger.info(f"LLM extracted truth: {truth_content}")
+                                
+                                # Store in database
+                                add_truth_data = {
+                                    'content': truth_content,
+                                    'source': f"Voice call from {call_log.caller_number}"
+                                }
+                                add_truth(add_truth_data)
+                                
+                                response = f"I've stored the truth: '{truth_content}'. Thank you for contributing to Zion's knowledge."
+                                logger.info(f"Added truth from LLM extraction: {truth_content}")
+                            
+                    # Use the LLM's response directly if it seems valid
+                    if "response:" in llm_response["response"].lower():
+                        response_parts = llm_response["response"].split("Response:", 1)
+                        if len(response_parts) > 1:
+                            response = response_parts[1].strip()
+                
+            except Exception as llm_error:
+                logger.warning(f"Error using LLM for transcript analysis: {llm_error}")
+                logger.info("Falling back to rule-based processing")
+            
+            # Fallback to rule-based intent recognition
             if "store this truth" in transcript.lower() or "remember this" in transcript.lower():
                 # Extract the truth content
                 if "store this truth" in transcript.lower():
@@ -136,14 +192,38 @@ def process_transcript():
                     }
                     
                     # Add truth to database
-                    from truth_store import add_truth
                     add_truth(add_truth_data)
                     
                     response = f"I've stored the truth: '{truth_content}'. Thank you for contributing to Zion's knowledge."
-                    logger.info(f"Added truth from transcript: {truth_content}")
+                    logger.info(f"Added truth from rule-based extraction: {truth_content}")
                 except Exception as truth_error:
                     logger.error(f"Error adding truth: {truth_error}")
                     response = "I encountered an error storing your truth. Please try again later."
+            
+            # If it looks like a question, try to find relevant information
+            elif "?" in transcript or transcript.lower().startswith("what") or transcript.lower().startswith("how") or transcript.lower().startswith("why"):
+                try:
+                    # Search for relevant truths
+                    from truth_store import search_truths
+                    from flask import request as flask_request
+                    
+                    class MockRequest:
+                        args = {"query": transcript, "type": "text", "limit": "3"}
+                    
+                    # Call the search function
+                    original_request = flask_request
+                    flask_request = MockRequest()
+                    search_response = search_truths()
+                    flask_request = original_request
+                    
+                    if search_response and isinstance(search_response, dict):
+                        results = search_response.get("results", [])
+                        if results:
+                            # Found some relevant information
+                            truth_content = results[0].get("content", "")
+                            response = f"Based on what I know: {truth_content}"
+                except Exception as search_error:
+                    logger.error(f"Error searching truths: {search_error}")
             
             # Update call log with response
             call_log.response = response
