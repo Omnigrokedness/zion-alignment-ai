@@ -229,10 +229,34 @@ def process_transcript():
             # Fallback to rule-based intent recognition
             if "store this truth" in transcript.lower() or "remember this" in transcript.lower():
                 # Extract the truth content
-                if "store this truth" in transcript.lower():
-                    truth_content = transcript.lower().split("store this truth", 1)[1].strip()
-                else:
-                    truth_content = transcript.lower().split("remember this", 1)[1].strip()
+                try:
+                    truth_content = transcript
+                    
+                    # Check for various formats
+                    if "store this truth:" in transcript.lower():
+                        logger.info("Found 'store this truth:' with colon")
+                        truth_content = transcript.lower().split("store this truth:", 1)[1].strip()
+                    elif "Store this truth:" in transcript:
+                        logger.info("Found 'Store this truth:' with colon")
+                        truth_content = transcript.split("Store this truth:", 1)[1].strip()
+                    elif "store this truth" in transcript.lower():
+                        logger.info("Found 'store this truth' without colon")
+                        truth_content = transcript.lower().split("store this truth", 1)[1].strip()
+                    elif "Store this truth" in transcript:
+                        logger.info("Found 'Store this truth' without colon")
+                        truth_content = transcript.split("Store this truth", 1)[1].strip()
+                    elif "remember this" in transcript.lower():
+                        logger.info("Found 'remember this'")
+                        truth_content = transcript.lower().split("remember this", 1)[1].strip()
+                    else:
+                        # Just in case we can't parse correctly
+                        logger.warning("Using full transcript as truth content")
+                        # Already set to transcript above
+                    
+                    logger.info(f"Extracted truth content: '{truth_content}'")
+                except Exception as extract_error:
+                    logger.error(f"Truth extraction error: {extract_error}")
+                    truth_content = transcript
                 
                 # Store the truth in our database
                 try:
@@ -377,6 +401,8 @@ def simulate_voice_interaction():
         return jsonify({"error": "Text is required"}), 400
     
     try:
+        logger.info(f"Starting simulation with text: '{text}' and phone: {phone}")
+        
         # Create a simulated call log
         call_log = CallLog(
             twilio_sid=f"SIMULATED_{int(time.time())}",
@@ -385,6 +411,7 @@ def simulate_voice_interaction():
         )
         db.session.add(call_log)
         db.session.commit()
+        logger.info(f"Created call log with ID: {call_log.id}")
         
         # Process the text similar to how we'd process a transcript
         # Try to use the LLM handler if available, otherwise use rule-based responses
@@ -448,13 +475,37 @@ def simulate_voice_interaction():
         
         # Fallback to rule-based intent recognition
         if "store this truth" in text.lower() or "remember this" in text.lower():
+            logger.info(f"Detected truth storage intent in: '{text}'")
             # Extract the truth content
-            if "store this truth" in text.lower():
-                truth_content = text.split("store this truth", 1)[1].strip()
-            elif "Store this truth" in text:
-                truth_content = text.split("Store this truth", 1)[1].strip()
-            else:
-                truth_content = text.split("remember this", 1)[1].strip()
+            try:
+                truth_content = text
+                
+                # Check for various formats with specific priority
+                if "Store this truth:" in text:
+                    # This is the most explicit format, handle first
+                    logger.info("Found 'Store this truth:' with colon")
+                    truth_content = text.split("Store this truth:", 1)[1].strip()
+                elif "store this truth:" in text.lower():
+                    logger.info("Found 'store this truth:' with colon")
+                    truth_content = text.lower().split("store this truth:", 1)[1].strip()
+                elif "Store this truth" in text:
+                    logger.info("Found 'Store this truth' without colon")
+                    truth_content = text.split("Store this truth", 1)[1].strip()
+                elif "store this truth" in text.lower():
+                    logger.info("Found 'store this truth' without colon")
+                    truth_content = text.lower().split("store this truth", 1)[1].strip()
+                elif "remember this" in text.lower():
+                    logger.info("Found 'remember this'")
+                    truth_content = text.lower().split("remember this", 1)[1].strip()
+                else:
+                    # Just in case we can't parse correctly
+                    logger.warning("Using full text as truth content")
+                    # Already set to text above
+                
+                logger.info(f"Extracted truth content: '{truth_content}'")
+            except Exception as extract_error:
+                logger.error(f"Truth extraction error: {extract_error}")
+                truth_content = text.replace("Store this truth:", "").replace("store this truth:", "").strip()
             
             # Store the truth in our database
             try:
