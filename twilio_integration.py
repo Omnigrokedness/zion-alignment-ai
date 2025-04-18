@@ -301,12 +301,24 @@ def process_transcript():
                                   "i need information on", "i want information about", "i want information on",
                                   "i need to know about", "i want to know about", 
                                   "can you tell me about ", "can you tell me about",  # Added space version
-                                  "i need", "i want", "can you tell me", "can you", "could you tell me", "could you"]:
+                                  "i need", "i want", "can you tell me", "can you", "could you tell me", "could you",
+                                  "i would like to know", "would like to know", "what does it mean to", "what does it mean by",
+                                  "what does it mean", "what do you know about"]:
                         search_terms = search_terms.replace(phrase, "")
                     search_terms = search_terms.strip()
                     
                     # Further clean up the search terms
                     search_terms = ' '.join(search_terms.split())  # Normalize whitespace
+                    
+                    # Handle capitalization issues with terms like 'Holy Spirit' vs 'holy spirit'
+                    search_terms_lower = search_terms.lower()
+                    
+                    # Special handling for spirit vs Holy Spirit
+                    if "spirit" in search_terms_lower and not "holy spirit" in search_terms_lower:
+                        # Check if we're talking about the Holy Spirit
+                        if "walk by" in search_terms_lower or "led by" in search_terms_lower:
+                            search_terms = "holy spirit"
+                            logger.info("Search term contains 'spirit', refined to 'holy spirit'")
                     
                     # If the search term has multiple words, try to identify the main subject
                     if len(search_terms.split()) > 3:
@@ -315,7 +327,7 @@ def process_transcript():
                                     "gospel", "holy spirit", "jesus", "christ", "salvation"]
                         
                         for topic in key_topics:
-                            if topic in search_terms:
+                            if topic in search_terms_lower:
                                 search_terms = topic
                                 logger.info(f"Refined search to key topic: {topic}")
                                 break
@@ -595,12 +607,23 @@ def simulate_voice_interaction():
                               "i need to know about", "i want to know about", "can you tell me about",
                               "i would like to know about", "would like to know about", "would like to know more about",
                               "i need", "i want", "can you tell me", "can you", "could you tell me", "could you",
-                              "i would like to know", "would like to know"]:
+                              "i would like to know", "would like to know", "what does it mean to", "what does it mean by",
+                              "what does it mean", "what do you know about"]:
                     search_terms = search_terms.replace(phrase, "")
                 search_terms = search_terms.strip()
                 
                 # Further clean up the search terms
                 search_terms = ' '.join(search_terms.split())  # Normalize whitespace
+                
+                # Handle capitalization issues with terms like 'Holy Spirit' vs 'holy spirit'
+                search_terms_lower = search_terms.lower()
+                
+                # Special handling for spirit vs Holy Spirit
+                if "spirit" in search_terms_lower and not "holy spirit" in search_terms_lower:
+                    # Check if we're talking about the Holy Spirit
+                    if "walk by" in search_terms_lower or "led by" in search_terms_lower:
+                        search_terms = "holy spirit"
+                        logger.info("Search term contains 'spirit', refined to 'holy spirit'")
                 
                 # If the search term has multiple words, try to identify the main subject
                 if len(search_terms.split()) > 3:
@@ -609,7 +632,7 @@ def simulate_voice_interaction():
                                 "gospel", "holy spirit", "jesus", "christ", "salvation"]
                     
                     for topic in key_topics:
-                        if topic in search_terms:
+                        if topic in search_terms_lower:
                             search_terms = topic
                             logger.info(f"Refined search to key topic: {topic}")
                             break
