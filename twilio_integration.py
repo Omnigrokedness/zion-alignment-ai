@@ -274,11 +274,25 @@ def process_transcript():
                     logger.error(f"Error adding truth: {truth_error}")
                     response = "I encountered an error storing your truth. Please try again later."
             
-            # If it looks like a question, try to find relevant information
-            elif "?" in transcript or transcript.lower().startswith("what") or transcript.lower().startswith("how") or transcript.lower().startswith("why"):
+            # If it looks like a question or information request, try to find relevant information
+            elif ("?" in transcript or 
+                  transcript.lower().startswith("what") or 
+                  transcript.lower().startswith("how") or 
+                  transcript.lower().startswith("why") or
+                  transcript.lower().startswith("tell me about") or
+                  transcript.lower().startswith("tell us about") or
+                  "tell me about" in transcript.lower() or
+                  "information on" in transcript.lower() or
+                  "information about" in transcript.lower()):
                 try:
-                    # Directly search the database for relevant truths
-                    search_terms = transcript.lower().replace("?", "").replace("what is", "").replace("tell me about", "").strip()
+                    # Directly search the database for relevant truths - extract just the key search terms
+                    search_terms = transcript.lower()
+                    # Remove common question words and phrases
+                    for phrase in ["?", "what is", "what are", "tell me about", "tell us about", 
+                                  "information on", "information about", "how does", "how do", 
+                                  "why is", "why are", "can you tell me about"]:
+                        search_terms = search_terms.replace(phrase, "")
+                    search_terms = search_terms.strip()
                     
                     # Log what we're searching for
                     logger.info(f"Searching for: '{search_terms}'")
@@ -527,11 +541,25 @@ def simulate_voice_interaction():
                 logger.error(f"Error adding truth: {truth_error}")
                 response = "I encountered an error storing your truth. Please try again later."
         
-        # If it looks like a question, try to find relevant information
-        elif "?" in text or text.lower().startswith("what") or text.lower().startswith("how") or text.lower().startswith("why"):
+        # If it looks like a question or information request, try to find relevant information
+        elif ("?" in text or 
+              text.lower().startswith("what") or 
+              text.lower().startswith("how") or 
+              text.lower().startswith("why") or
+              text.lower().startswith("tell me about") or
+              text.lower().startswith("tell us about") or
+              "tell me about" in text.lower() or
+              "information on" in text.lower() or
+              "information about" in text.lower()):
             try:
-                # Directly search the database for relevant truths
-                search_terms = text.lower().replace("?", "").replace("what is", "").replace("tell me about", "").strip()
+                # Directly search the database for relevant truths - extract just the key search terms
+                search_terms = text.lower()
+                # Remove common question words and phrases
+                for phrase in ["?", "what is", "what are", "tell me about", "tell us about", 
+                              "information on", "information about", "how does", "how do", 
+                              "why is", "why are", "can you tell me about"]:
+                    search_terms = search_terms.replace(phrase, "")
+                search_terms = search_terms.strip()
                 
                 # Log what we're searching for
                 logger.info(f"Searching for: '{search_terms}'")
