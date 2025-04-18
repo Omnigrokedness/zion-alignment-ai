@@ -742,11 +742,19 @@ def simulate_voice_interaction():
                     search_terms = "model of transformation"
                     logger.info("Found gospel transformation query, refined to specialized search")
                 
+                # Enhanced debugging for endurance transformation
+                logger.info(f"DEBUG: Checking endurance transform conditions on: '{search_terms_lower}'")
+                
+                # Check for endurance transformation query
+                has_endur_transform = "endur" in search_terms_lower and "transform" in search_terms_lower
+                has_endur_leads = "endur" in search_terms_lower and "leads to" in search_terms_lower
+                has_exact_phrase = "endurance leads to transformation" in search_terms_lower
+                endurance_transform_match = has_endur_transform or has_endur_leads or has_exact_phrase
+                
                 # Special handling for endurance transformation queries
-                elif (("endur" in search_terms_lower and "transform" in search_terms_lower) or 
-                      ("endurance" in search_terms_lower and "leads to" in search_terms_lower)):
+                if endurance_transform_match:
                     search_terms = "endure to the end is to maintain alignment with the system—through trials, through change, through time, and into transformation"
-                    logger.info("Found endurance transformation query, refined to specialized search")
+                    logger.info(f"Found endurance transformation query in '{search_terms_lower}', refined to specialized search")
                 
                 # If the search term has multiple words, try to identify the main subject
                 if len(search_terms.split()) > 3:
@@ -798,6 +806,8 @@ def simulate_voice_interaction():
                     "system of alignment": "living system of divine alignment",
                     "model of transformation": "model of transformation",
                     "transform": "model of transformation",
+                    "endurance transformation": "endure to the end is to maintain alignment with the system—through trials, through change, through time, and into transformation",
+                    "endurance leads to": "endure to the end is to maintain alignment with the system—through trials, through change, through time, and into transformation",
                 }
                 
                 # Check if we're dealing with a known theological concept
