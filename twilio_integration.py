@@ -609,7 +609,8 @@ def simulate_voice_interaction():
     # Special handling for endurance transformation query
     elif (text.lower().strip() == "explain how endurance leads to transformation" or
           text.lower().strip() == "how does endurance lead to transformation" or
-          text.lower().strip() == "tell me how endurance leads to transformation"):
+          text.lower().strip() == "tell me how endurance leads to transformation" or
+          text.lower().strip() == "how endurance leads to transformation"):
         try:
             from models import Truth
             # First try to find the endurance transformation content
