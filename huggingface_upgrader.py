@@ -93,11 +93,28 @@ def manage_settings():
     if request.method == 'GET':
         # Get current settings
         try:
+            # Include Twilio settings along with other settings
             settings = {
                 s.key: s.value for s in Setting.query.filter(
-                    Setting.key.in_(['preferred_model', 'upgrade_key', 'auto_upgrade', 'system_prompt'])
+                    Setting.key.in_([
+                        'preferred_model', 'upgrade_key', 'auto_upgrade', 'system_prompt',
+                        'twilio_phone_number', 'twilio_account_sid', 'twilio_auth_token'
+                    ])
                 ).all()
             }
+            
+            # Add Twilio phone number from environment if not in database
+            if 'twilio_phone_number' not in settings:
+                twilio_phone = os.environ.get('TWILIO_PHONE_NUMBER')
+                if twilio_phone:
+                    settings['twilio_phone_number'] = twilio_phone
+            
+            # Add Twilio Account SID if not in database
+            if 'twilio_account_sid' not in settings:
+                twilio_sid = os.environ.get('TWILIO_ACCOUNT_SID')
+                if twilio_sid:
+                    settings['twilio_account_sid'] = twilio_sid
+            
             return jsonify(settings)
         except Exception as e:
             logger.error(f"Error getting settings: {e}")
@@ -107,6 +124,12 @@ def manage_settings():
         data = request.json
         try:
             for key, value in data.items():
+                # For Twilio settings, also update environment variables
+                if key in ['twilio_phone_number', 'twilio_account_sid', 'twilio_auth_token']:
+                    env_key = key.upper()
+                    # We don't modify environment variables at runtime, but we store values in the database
+                    logger.info(f"Twilio setting {key} updated in database")
+                
                 setting = Setting.query.filter_by(key=key).first()
                 if setting:
                     setting.value = value
