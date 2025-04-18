@@ -696,6 +696,11 @@ def simulate_voice_interaction():
                     search_terms = "endurance"
                     logger.info("Search term contains 'endure', refined to 'endurance'")
                 
+                # Special handling for "gospel as a system of alignment" query
+                elif "gospel" in search_terms_lower and "system" in search_terms_lower and "alignment" in search_terms_lower:
+                    search_terms = "living system of divine alignment"
+                    logger.info("Found 'gospel as a system of alignment' query, refined to specialized search")
+                
                 # If the search term has multiple words, try to identify the main subject
                 if len(search_terms.split()) > 3:
                     # Look for keywords in our database to focus the search
