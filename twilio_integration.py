@@ -283,16 +283,40 @@ def process_transcript():
                   transcript.lower().startswith("tell us about") or
                   "tell me about" in transcript.lower() or
                   "information on" in transcript.lower() or
-                  "information about" in transcript.lower()):
+                  "information about" in transcript.lower() or
+                  "i need information" in transcript.lower() or
+                  "i want information" in transcript.lower() or
+                  "i need to know" in transcript.lower() or
+                  "i want to know" in transcript.lower() or
+                  "can you tell me" in transcript.lower()):
                 try:
                     # Directly search the database for relevant truths - extract just the key search terms
                     search_terms = transcript.lower()
                     # Remove common question words and phrases
                     for phrase in ["?", "what is", "what are", "tell me about", "tell us about", 
                                   "information on", "information about", "how does", "how do", 
-                                  "why is", "why are", "can you tell me about"]:
+                                  "why is", "why are", "i need information about",
+                                  "i need information on", "i want information about", "i want information on",
+                                  "i need to know about", "i want to know about", 
+                                  "can you tell me about ", "can you tell me about",  # Added space version
+                                  "i need", "i want", "can you", "could you"]:
                         search_terms = search_terms.replace(phrase, "")
                     search_terms = search_terms.strip()
+                    
+                    # Further clean up the search terms
+                    search_terms = ' '.join(search_terms.split())  # Normalize whitespace
+                    
+                    # If the search term has multiple words, try to identify the main subject
+                    if len(search_terms.split()) > 3:
+                        # Look for keywords in our database to focus the search
+                        key_topics = ["faith", "revelation", "truth", "scripture", "prophecy", 
+                                    "gospel", "holy spirit", "jesus", "christ", "salvation"]
+                        
+                        for topic in key_topics:
+                            if topic in search_terms:
+                                search_terms = topic
+                                logger.info(f"Refined search to key topic: {topic}")
+                                break
                     
                     # Log what we're searching for
                     logger.info(f"Searching for: '{search_terms}'")
@@ -550,16 +574,39 @@ def simulate_voice_interaction():
               text.lower().startswith("tell us about") or
               "tell me about" in text.lower() or
               "information on" in text.lower() or
-              "information about" in text.lower()):
+              "information about" in text.lower() or
+              "i need information" in text.lower() or
+              "i want information" in text.lower() or
+              "i need to know" in text.lower() or
+              "i want to know" in text.lower() or
+              "can you tell me" in text.lower()):
             try:
                 # Directly search the database for relevant truths - extract just the key search terms
                 search_terms = text.lower()
                 # Remove common question words and phrases
                 for phrase in ["?", "what is", "what are", "tell me about", "tell us about", 
                               "information on", "information about", "how does", "how do", 
-                              "why is", "why are", "can you tell me about"]:
+                              "why is", "why are", "can you tell me about", "i need information about",
+                              "i need information on", "i want information about", "i want information on",
+                              "i need to know about", "i want to know about", "can you tell me about",
+                              "i need", "i want"]:
                     search_terms = search_terms.replace(phrase, "")
                 search_terms = search_terms.strip()
+                
+                # Further clean up the search terms
+                search_terms = ' '.join(search_terms.split())  # Normalize whitespace
+                
+                # If the search term has multiple words, try to identify the main subject
+                if len(search_terms.split()) > 3:
+                    # Look for keywords in our database to focus the search
+                    key_topics = ["faith", "revelation", "truth", "scripture", "prophecy", 
+                                "gospel", "holy spirit", "jesus", "christ", "salvation"]
+                    
+                    for topic in key_topics:
+                        if topic in search_terms:
+                            search_terms = topic
+                            logger.info(f"Refined search to key topic: {topic}")
+                            break
                 
                 # Log what we're searching for
                 logger.info(f"Searching for: '{search_terms}'")
