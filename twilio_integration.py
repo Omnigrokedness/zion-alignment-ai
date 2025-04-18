@@ -740,8 +740,10 @@ def simulate_voice_interaction():
                     "holy ghost": "holy ghost is not just a comforter",
                     "gift of the holy ghost": "gift of the holy ghost",
                     "enduring to the end": "enduring to the end",
-                    "gospel system": "gospel system",
+                    "gospel system": "gospel of Jesus Christ is a living system",
                     "baptism": "Baptism is not a ritual.",
+                    "gospel as a system": "gospel of Jesus Christ is a living system",
+                    "system of alignment": "living system of divine alignment",
                 }
                 
                 # Check if we're dealing with a known theological concept
