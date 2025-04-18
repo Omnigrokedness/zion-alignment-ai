@@ -2,8 +2,6 @@ import os
 import logging
 import threading
 from flask import Blueprint, jsonify, request
-# import torch
-# from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from app import db
 from models import ModelState, Setting
 
@@ -19,10 +17,27 @@ tokenizer = None
 generation_pipeline = None
 model_lock = threading.Lock()
 
+# For production deployment, uncomment these imports and use the Mistral 7B model
+"""
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+
+# Production deployment configuration for 16GB VPS:
+DEFAULT_MODEL = "mistralai/Mistral-7B-v0.1"
+DEVICE_MAP = "auto"  # Uses all available GPUs/CPUs optimally
+"""
+
 def initialize_model():
     """Initialize the language model and tokenizer"""
     global model, tokenizer, generation_pipeline
     
+    # This is a placeholder implementation while ML libraries are disabled
+    # For production deployment on 16GB VPS, use the commented code below
+    logger.warning("Running in placeholder mode without ML libraries")
+    return False
+    
+    """
+    # PRODUCTION IMPLEMENTATION:
     try:
         with model_lock:
             # Check if model is already loaded
@@ -30,68 +45,79 @@ def initialize_model():
                 return True
             
             # Get current model info from database
-            with db.session() as session:
-                model_state = ModelState.query.filter_by(loaded=True).first()
-                
-                if not model_state:
-                    # Default to Gemma 7B if no model is set
-                    default_model = "google/gemma-7b"
-                    model_state = ModelState(
-                        model_name="gemma-7b",
-                        model_version="1.0",
-                        model_path=default_model,
-                        quantization="int4",
-                        loaded=True
-                    )
-                    session.add(model_state)
-                    session.commit()
-                    logger.info(f"No model found in DB, defaulting to {default_model}")
-                
-                logger.info(f"Loading model: {model_state.model_path} with {model_state.quantization} quantization")
-                
-                # Load the model with quantization
-                if model_state.quantization == "int4":
-                    try:
-                        # Load int4 quantized model
-                        model = AutoModelForCausalLM.from_pretrained(
-                            model_state.model_path,
-                            torch_dtype=torch.float16,
-                            device_map="auto",
-                            load_in_4bit=True
-                        )
-                    except Exception as e:
-                        logger.error(f"Error loading int4 model: {e}")
-                        # Fallback to int8
-                        model = AutoModelForCausalLM.from_pretrained(
-                            model_state.model_path,
-                            torch_dtype=torch.float16,
-                            device_map="auto",
-                            load_in_8bit=True
-                        )
-                else:
-                    # Load int8 quantized model
+            model_state = ModelState.query.filter_by(loaded=True).first()
+            
+            if not model_state:
+                # Default to Mistral 7B if no model is set
+                default_model = DEFAULT_MODEL
+                model_state = ModelState(
+                    model_name="Mistral-7B-v0.1",
+                    model_version="0.1",
+                    model_path=default_model,
+                    quantization="int4",  # Best for 16GB VPS
+                    loaded=True
+                )
+                db.session.add(model_state)
+                db.session.commit()
+                logger.info(f"No model found in DB, defaulting to {default_model}")
+            
+            logger.info(f"Loading model: {model_state.model_path} with {model_state.quantization} quantization")
+            
+            # Load the model with quantization - int4 is optimal for 16GB VPS
+            if model_state.quantization == "int4":
+                try:
+                    # Load int4 quantized model
                     model = AutoModelForCausalLM.from_pretrained(
                         model_state.model_path,
                         torch_dtype=torch.float16,
-                        device_map="auto",
-                        load_in_8bit=True
+                        device_map=DEVICE_MAP,
+                        load_in_4bit=True,
+                        low_cpu_mem_usage=True,
+                        quantization_config={
+                            "quant_method": "bitsandbytes",
+                            "bits": 4,
+                        }
                     )
-                
-                # Load tokenizer
-                tokenizer = AutoTokenizer.from_pretrained(model_state.model_path)
-                
-                # Create generation pipeline
-                generation_pipeline = pipeline(
-                    "text-generation",
-                    model=model,
-                    tokenizer=tokenizer
+                except Exception as e:
+                    logger.error(f"Error loading int4 model: {e}")
+                    # Fallback to int8
+                    model = AutoModelForCausalLM.from_pretrained(
+                        model_state.model_path,
+                        torch_dtype=torch.float16,
+                        device_map=DEVICE_MAP,
+                        load_in_8bit=True,
+                        low_cpu_mem_usage=True
+                    )
+            else:
+                # Load int8 quantized model
+                model = AutoModelForCausalLM.from_pretrained(
+                    model_state.model_path,
+                    torch_dtype=torch.float16,
+                    device_map=DEVICE_MAP,
+                    load_in_8bit=True,
+                    low_cpu_mem_usage=True
                 )
-                
-                logger.info("Model loaded successfully")
-                return True
+            
+            # Load tokenizer
+            tokenizer = AutoTokenizer.from_pretrained(model_state.model_path)
+            
+            # Create generation pipeline
+            generation_pipeline = pipeline(
+                "text-generation",
+                model=model,
+                tokenizer=tokenizer
+            )
+            
+            # Update last_used timestamp
+            model_state.last_used = datetime.utcnow()
+            db.session.commit()
+            
+            logger.info("Model loaded successfully")
+            return True
     except Exception as e:
         logger.error(f"Failed to initialize model: {e}")
         return False
+    """
 
 @llm_bp.route('/generate', methods=['POST'])
 def generate_text():
