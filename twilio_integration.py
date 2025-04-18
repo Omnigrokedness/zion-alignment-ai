@@ -338,22 +338,65 @@ def process_transcript():
                     if len(search_terms.split()) > 3:
                         # Look for keywords in our database to focus the search
                         key_topics = ["faith", "revelation", "truth", "scripture", "prophecy", 
-                                    "gospel", "holy spirit", "jesus", "christ", "salvation"]
+                                    "gospel", "holy spirit", "jesus", "christ", "salvation",
+                                    "repentance", "baptism", "endurance", "enduring", "covenant",
+                                    "elements of repentance", "pattern of faith", "alma 32", 
+                                    "baptismal covenant", "holy ghost", "gift of the holy ghost"]
                         
+                        # Try to find the most specific match first, otherwise fallback to a broader term
+                        found_specific_topic = False
+                        
+                        # First look for multi-word specific topics
                         for topic in key_topics:
-                            if topic in search_terms_lower:
+                            if " " in topic and topic.lower() in search_terms_lower:
                                 search_terms = topic
-                                logger.info(f"Refined search to key topic: {topic}")
+                                logger.info(f"Refined search to specific key topic: {topic}")
+                                found_specific_topic = True
                                 break
+                        
+                        # If no specific topic found, try broader single word matches
+                        if not found_specific_topic:
+                            for topic in key_topics:
+                                if " " not in topic and topic.lower() in search_terms_lower:
+                                    search_terms = topic
+                                    logger.info(f"Refined search to key topic: {topic}")
+                                    break
                     
                     # Log what we're searching for
                     logger.info(f"Searching for: '{search_terms}'")
                     
-                    # Perform a simple text search
+                    # Perform an enhanced search with special handling for key concepts
                     from models import Truth
                     
-                    # Search in the truth content
-                    results = Truth.query.filter(Truth.content.ilike(f'%{search_terms}%')).limit(3).all()
+                    # Check for specific theological concepts that need to be handled specially
+                    specific_concept_searches = {
+                        "pattern of faith": "pattern of faith in alma 32",
+                        "elements of repentance": "five elements of repentance",
+                        "baptismal covenant": "baptismal covenant",
+                        "holy ghost": "holy ghost is not just a comforter",
+                        "gift of the holy ghost": "gift of the holy ghost",
+                        "enduring to the end": "enduring to the end",
+                        "gospel system": "gospel system",
+                    }
+                    
+                    # Check if we're dealing with a known theological concept
+                    concept_search_term = None
+                    for concept, search_phrase in specific_concept_searches.items():
+                        if concept.lower() in search_terms.lower():
+                            concept_search_term = search_phrase
+                            logger.info(f"Using specialized concept search: '{concept_search_term}' for '{search_terms}'")
+                            break
+                    
+                    # Perform the search with the appropriate search term
+                    if concept_search_term:
+                        # Try the specialized concept search first
+                        results = Truth.query.filter(Truth.content.ilike(f'%{concept_search_term}%')).limit(3).all()
+                        if not results:
+                            # Fall back to the original search term
+                            results = Truth.query.filter(Truth.content.ilike(f'%{search_terms}%')).limit(3).all()
+                    else:
+                        # Use standard search
+                        results = Truth.query.filter(Truth.content.ilike(f'%{search_terms}%')).limit(3).all()
                     
                     if results:
                         # Found relevant information
