@@ -13,23 +13,33 @@ logger = logging.getLogger(__name__)
 truth_bp = Blueprint('truth', __name__, url_prefix='/api/truth')
 
 @truth_bp.route('/add', methods=['POST'])
-def add_truth():
+def add_truth(data=None):
     """Add a new truth to the database"""
-    data = request.json
+    # Allow direct function call with data parameter or get from request
+    if data is None:
+        data = request.json
+    
     content = data.get('content')
     source = data.get('source', '')
     
     if not content:
-        return jsonify({"error": "Content is required"}), 400
+        if request:
+            return jsonify({"error": "Content is required"}), 400
+        else:
+            logger.error("Content is required for adding truth")
+            return None
     
     try:
         # Create new truth
         truth = Truth(content=content, source=source)
         
-        # Generate embedding
-        embedding = get_embedding(content)
-        if embedding is not None:
-            truth.set_vector(embedding.tolist())
+        # Generate embedding - skipped if ML is disabled
+        try:
+            embedding = get_embedding(content)
+            if embedding is not None:
+                truth.set_vector(embedding.tolist())
+        except Exception as embed_error:
+            logger.warning(f"Could not generate embedding for truth: {embed_error}")
         
         # Extract topics (simplified implementation)
         topics = extract_topics(content)
@@ -39,18 +49,29 @@ def add_truth():
         db.session.add(truth)
         db.session.commit()
         
-        # Add to search index
-        add_to_index(truth)
+        # Add to search index - skipped if ML is disabled
+        try:
+            add_to_index(truth)
+        except Exception as index_error:
+            logger.warning(f"Could not add truth to search index: {index_error}")
         
-        return jsonify({
+        result = {
             "id": truth.id,
             "message": "Truth added successfully",
             "topics": topics
-        })
+        }
+        
+        if request:
+            return jsonify(result)
+        else:
+            return result
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error adding truth: {e}")
-        return jsonify({"error": str(e)}), 500
+        if request:
+            return jsonify({"error": str(e)}), 500
+        else:
+            return None
 
 @truth_bp.route('/delete/<int:truth_id>', methods=['DELETE'])
 def delete_truth(truth_id):
