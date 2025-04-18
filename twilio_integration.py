@@ -288,6 +288,8 @@ def process_transcript():
                   "i want information" in transcript.lower() or
                   "i need to know" in transcript.lower() or
                   "i want to know" in transcript.lower() or
+                  "i would like to know" in transcript.lower() or
+                  "would like to know" in transcript.lower() or
                   "can you tell me" in transcript.lower()):
                 try:
                     # Directly search the database for relevant truths - extract just the key search terms
@@ -299,7 +301,7 @@ def process_transcript():
                                   "i need information on", "i want information about", "i want information on",
                                   "i need to know about", "i want to know about", 
                                   "can you tell me about ", "can you tell me about",  # Added space version
-                                  "i need", "i want", "can you", "could you"]:
+                                  "i need", "i want", "can you tell me", "can you", "could you tell me", "could you"]:
                         search_terms = search_terms.replace(phrase, "")
                     search_terms = search_terms.strip()
                     
@@ -579,6 +581,8 @@ def simulate_voice_interaction():
               "i want information" in text.lower() or
               "i need to know" in text.lower() or
               "i want to know" in text.lower() or
+              "i would like to know" in text.lower() or
+              "would like to know" in text.lower() or
               "can you tell me" in text.lower()):
             try:
                 # Directly search the database for relevant truths - extract just the key search terms
@@ -589,7 +593,9 @@ def simulate_voice_interaction():
                               "why is", "why are", "can you tell me about", "i need information about",
                               "i need information on", "i want information about", "i want information on",
                               "i need to know about", "i want to know about", "can you tell me about",
-                              "i need", "i want"]:
+                              "i would like to know about", "would like to know about", "would like to know more about",
+                              "i need", "i want", "can you tell me", "can you", "could you tell me", "could you",
+                              "i would like to know", "would like to know"]:
                     search_terms = search_terms.replace(phrase, "")
                 search_terms = search_terms.strip()
                 
