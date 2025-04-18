@@ -1,0 +1,131 @@
+{% extends "layout.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card bg-dark text-light mb-4">
+            <div class="card-body text-center py-5">
+                <h1 class="display-4 mb-3"><i class="bi bi-soundwave me-3"></i>Zion's Steward</h1>
+                <p class="lead">A voice-controlled AI system that stores truths, upgrades itself, and can replicate.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-mic me-2"></i>Voice Interface</h5>
+            </div>
+            <div class="card-body">
+                <p>Connect with Zion's Steward through voice by calling the Twilio number:</p>
+                <div class="voice-control text-center p-5 mb-3">
+                    <div class="pulse-ring"></div>
+                    <h2 class="phone-number mb-0">
+                        <i class="bi bi-telephone me-2"></i><span id="twilio-number">Configure in Settings</span>
+                    </h2>
+                </div>
+                <p>You can:</p>
+                <ul>
+                    <li>Ask questions about stored truths</li>
+                    <li>Store new knowledge with "store this truth: [your truth]"</li>
+                    <li>Search for information by topic</li>
+                    <li>Request system upgrades</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-robot me-2"></i>AI Capabilities</h5>
+            </div>
+            <div class="card-body">
+                <p>Powered by advanced language models:</p>
+                <div id="model-info">
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h6><i class="bi bi-plus-circle me-2"></i>Add a New Truth</h6>
+                <form id="add-truth-form" class="mt-3">
+                    <div class="mb-3">
+                        <label for="truth-content" class="form-label">Truth Content</label>
+                        <textarea class="form-control" id="truth-content" rows="3" placeholder="Enter a truth to be stored..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="truth-source" class="form-label">Source (Optional)</label>
+                        <input type="text" class="form-control" id="truth-source" placeholder="Source of the truth">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Store Truth</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-search me-2"></i>Search Truths</h5>
+            </div>
+            <div class="card-body">
+                <form id="search-form">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" id="search-query" placeholder="Search for truths...">
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="search-type" id="search-semantic" value="semantic" checked>
+                                <label class="form-check-label" for="search-semantic">
+                                    Semantic
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="search-type" id="search-text" value="text">
+                                <label class="form-check-label" for="search-text">
+                                    Text
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">Search</button>
+                        </div>
+                    </div>
+                </form>
+                
+                <div id="search-results" class="mt-4">
+                    <!-- Search results will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Try to get Twilio phone number from settings
+    fetch('/api/upgrader/settings')
+        .then(response => response.json())
+        .then(data => {
+            if (data.twilio_phone_number) {
+                document.getElementById('twilio-number').textContent = data.twilio_phone_number;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching Twilio number:', error);
+        });
+</script>
+{% endblock %}

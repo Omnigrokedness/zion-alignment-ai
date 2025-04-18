@@ -1,0 +1,257 @@
+{% extends "layout.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2 class="mb-4"><i class="bi bi-gear me-2"></i>System Settings</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4 settings-section">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-robot me-2"></i>Model Settings</h5>
+            </div>
+            <div class="card-body">
+                <div id="model-info" class="mb-4">
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <h6 class="mb-3">Update Model</h6>
+                <form id="update-model-form" class="settings-form">
+                    <div class="mb-3">
+                        <label for="model-path" class="form-label">Model Path</label>
+                        <input type="text" class="form-control" id="model-path" placeholder="e.g., google/gemma-7b">
+                        <div class="form-text">Enter a Hugging Face model ID or path to a local model directory.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantization" class="form-label">Quantization</label>
+                        <select class="form-select" id="quantization">
+                            <option value="int4">int4 (recommended for 16GB RAM)</option>
+                            <option value="int8">int8</option>
+                        </select>
+                        <div class="form-text">Lower precision allows for smaller memory footprint but may impact quality.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Model</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mb-4 settings-section">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-arrow-repeat me-2"></i>Self-Upgrade Settings</h5>
+            </div>
+            <div class="card-body">
+                <form id="upgrade-settings-form" class="settings-form">
+                    <div class="mb-3">
+                        <label for="preferred-model" class="form-label">Preferred Model</label>
+                        <input type="text" class="form-control" id="preferred-model" placeholder="e.g., google/gemma-7b">
+                        <div class="form-text">This model will be used during self-upgrades.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="upgrade-key-setting" class="form-label">Upgrade Key</label>
+                        <input type="password" class="form-control" id="upgrade-key-setting" placeholder="Set a secure upgrade key">
+                        <div class="form-text">Required for authorizing self-upgrades.</div>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="auto-upgrade">
+                        <label class="form-check-label" for="auto-upgrade">Enable automatic upgrades</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4 settings-section">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-telephone me-2"></i>Twilio Settings</h5>
+            </div>
+            <div class="card-body">
+                <form id="twilio-settings-form" class="settings-form">
+                    <div class="mb-3">
+                        <label for="twilio-phone-number" class="form-label">Twilio Phone Number</label>
+                        <input type="text" class="form-control" id="twilio-phone-number" placeholder="e.g., +1234567890">
+                        <div class="form-text">This number will be displayed for users to call into the system.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="twilio-account-sid" class="form-label">Account SID</label>
+                        <input type="text" class="form-control" id="twilio-account-sid" placeholder="Twilio Account SID">
+                        <div class="form-text">Your Twilio account identifier (environment variable).</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="twilio-auth-token" class="form-label">Auth Token</label>
+                        <input type="password" class="form-control" id="twilio-auth-token" placeholder="Twilio Auth Token">
+                        <div class="form-text">Your Twilio authentication token (environment variable).</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mb-4 settings-section">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-brush me-2"></i>System Prompt</h5>
+            </div>
+            <div class="card-body">
+                <form id="system-prompt-form" class="settings-form">
+                    <div class="mb-3">
+                        <label for="system-prompt" class="form-label">AI System Prompt</label>
+                        <textarea class="form-control" id="system-prompt" rows="8" placeholder="Instructions for the AI model..."></textarea>
+                        <div class="form-text">This prompt is prepended to all interactions with the AI model.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save System Prompt</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load settings
+        fetch('/api/upgrader/settings')
+            .then(response => response.json())
+            .then(data => {
+                // Set form values from settings
+                if (data.preferred_model) {
+                    document.getElementById('preferred-model').value = data.preferred_model;
+                }
+                if (data.upgrade_key) {
+                    document.getElementById('upgrade-key-setting').value = data.upgrade_key;
+                }
+                if (data.auto_upgrade) {
+                    document.getElementById('auto-upgrade').checked = data.auto_upgrade === 'true';
+                }
+                if (data.system_prompt) {
+                    document.getElementById('system-prompt').value = data.system_prompt;
+                }
+                if (data.twilio_phone_number) {
+                    document.getElementById('twilio-phone-number').value = data.twilio_phone_number;
+                }
+                if (data.twilio_account_sid) {
+                    document.getElementById('twilio-account-sid').value = data.twilio_account_sid;
+                }
+                // Auth token is sensitive - don't pre-fill but show placeholder instead
+            })
+            .catch(error => {
+                console.error('Error loading settings:', error);
+                showAlert('Failed to load settings from server', 'danger');
+            });
+        
+        // Handle upgrade settings form
+        const upgradeSettingsForm = document.getElementById('upgrade-settings-form');
+        if (upgradeSettingsForm) {
+            upgradeSettingsForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const preferredModel = document.getElementById('preferred-model').value;
+                const upgradeKey = document.getElementById('upgrade-key-setting').value;
+                const autoUpgrade = document.getElementById('auto-upgrade').checked;
+                
+                fetch('/api/upgrader/settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        preferred_model: preferredModel,
+                        upgrade_key: upgradeKey,
+                        auto_upgrade: String(autoUpgrade)
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        showAlert(data.error, 'danger');
+                    } else {
+                        showAlert('Upgrade settings saved successfully', 'success');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving upgrade settings:', error);
+                    showAlert('An error occurred while saving upgrade settings', 'danger');
+                });
+            });
+        }
+        
+        // Handle Twilio settings form
+        const twilioSettingsForm = document.getElementById('twilio-settings-form');
+        if (twilioSettingsForm) {
+            twilioSettingsForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const phoneNumber = document.getElementById('twilio-phone-number').value;
+                const accountSid = document.getElementById('twilio-account-sid').value;
+                const authToken = document.getElementById('twilio-auth-token').value;
+                
+                fetch('/api/upgrader/settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        twilio_phone_number: phoneNumber,
+                        twilio_account_sid: accountSid,
+                        twilio_auth_token: authToken
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        showAlert(data.error, 'danger');
+                    } else {
+                        showAlert('Twilio settings saved successfully', 'success');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving Twilio settings:', error);
+                    showAlert('An error occurred while saving Twilio settings', 'danger');
+                });
+            });
+        }
+        
+        // Handle system prompt form
+        const systemPromptForm = document.getElementById('system-prompt-form');
+        if (systemPromptForm) {
+            systemPromptForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const systemPrompt = document.getElementById('system-prompt').value;
+                
+                fetch('/api/upgrader/settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        system_prompt: systemPrompt
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        showAlert(data.error, 'danger');
+                    } else {
+                        showAlert('System prompt saved successfully', 'success');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving system prompt:', error);
+                    showAlert('An error occurred while saving system prompt', 'danger');
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

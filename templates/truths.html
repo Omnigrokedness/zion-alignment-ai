@@ -1,0 +1,203 @@
+{% extends "layout.html" %}
+
+{% block title %}Truths{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2 class="mb-4"><i class="bi bi-journal-text me-2"></i>Truths Repository</h2>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Add New Truth</h5>
+            </div>
+            <div class="card-body">
+                <form id="add-truth-form">
+                    <div class="mb-3">
+                        <label for="truth-content" class="form-label">Truth Content</label>
+                        <textarea class="form-control" id="truth-content" rows="4" placeholder="Enter a truth to be stored..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="truth-source" class="form-label">Source (Optional)</label>
+                        <input type="text" class="form-control" id="truth-source" placeholder="Source of the truth">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Store Truth</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-tags me-2"></i>Topics</h5>
+            </div>
+            <div class="card-body">
+                <div id="topics-list">
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>All Truths</h5>
+                    <div class="input-group" style="max-width: 300px;">
+                        <input type="text" class="form-control" id="filter-truths" placeholder="Filter truths...">
+                        <button class="btn btn-outline-secondary" type="button" id="clear-filter">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="truths-list">
+                    {% if truths %}
+                        {% for truth in truths %}
+                        <div class="truth-item" data-topics="{{ truth.get_topics()|tojson }}">
+                            <div class="d-flex justify-content-between">
+                                <p>{{ truth.content }}</p>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteTruth({{ truth.id }})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="truth-source">Source: {{ truth.source or 'Unknown' }}</div>
+                            <div class="truth-topics">
+                                {% for topic in truth.get_topics() %}
+                                <span class="badge bg-info topic-badge">{{ topic }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info">No truths stored yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load topics
+        fetch('/api/truth/topics')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('topics-list').innerHTML = 
+                        `<div class="alert alert-warning">${data.error}</div>`;
+                } else if (data.topics.length === 0) {
+                    document.getElementById('topics-list').innerHTML = 
+                        '<div class="alert alert-info">No topics found.</div>';
+                } else {
+                    let html = '<div class="list-group">';
+                    data.topics.forEach(topic => {
+                        html += `
+                            <a href="#" class="list-group-item list-group-item-action topic-filter" data-topic="${topic}">
+                                ${topic}
+                            </a>
+                        `;
+                    });
+                    html += '</div>';
+                    
+                    document.getElementById('topics-list').innerHTML = html;
+                    
+                    // Add event listeners to topic filters
+                    document.querySelectorAll('.topic-filter').forEach(item => {
+                        item.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            const topic = this.getAttribute('data-topic');
+                            filterTruthsByTopic(topic);
+                            
+                            // Highlight active topic
+                            document.querySelectorAll('.topic-filter').forEach(t => {
+                                t.classList.remove('active');
+                            });
+                            this.classList.add('active');
+                        });
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error loading topics:', error);
+                document.getElementById('topics-list').innerHTML = 
+                    '<div class="alert alert-danger">Failed to load topics</div>';
+            });
+        
+        // Filter truths by text input
+        const filterInput = document.getElementById('filter-truths');
+        if (filterInput) {
+            filterInput.addEventListener('input', function() {
+                const filterText = this.value.toLowerCase();
+                filterTruthsByText(filterText);
+            });
+            
+            // Clear filter
+            document.getElementById('clear-filter').addEventListener('click', function() {
+                filterInput.value = '';
+                filterTruthsByText('');
+                
+                // Remove active class from topics
+                document.querySelectorAll('.topic-filter').forEach(t => {
+                    t.classList.remove('active');
+                });
+            });
+        }
+    });
+    
+    // Filter truths by topic
+    function filterTruthsByTopic(topic) {
+        const truthItems = document.querySelectorAll('.truth-item');
+        
+        truthItems.forEach(item => {
+            const topics = JSON.parse(item.getAttribute('data-topics'));
+            if (topics.map(t => t.toLowerCase()).includes(topic.toLowerCase())) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+    
+    // Filter truths by text
+    function filterTruthsByText(text) {
+        const truthItems = document.querySelectorAll('.truth-item');
+        
+        if (!text) {
+            truthItems.forEach(item => {
+                item.style.display = '';
+            });
+            return;
+        }
+        
+        truthItems.forEach(item => {
+            const content = item.querySelector('p').textContent.toLowerCase();
+            const source = item.querySelector('.truth-source').textContent.toLowerCase();
+            
+            if (content.includes(text) || source.includes(text)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}
