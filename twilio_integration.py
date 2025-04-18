@@ -742,6 +742,12 @@ def simulate_voice_interaction():
                     search_terms = "model of transformation"
                     logger.info("Found gospel transformation query, refined to specialized search")
                 
+                # Special handling for endurance transformation queries
+                elif (("endur" in search_terms_lower and "transform" in search_terms_lower) or 
+                      ("endurance" in search_terms_lower and "leads to" in search_terms_lower)):
+                    search_terms = "endure to the end is to maintain alignment with the system—through trials, through change, through time, and into transformation"
+                    logger.info("Found endurance transformation query, refined to specialized search")
+                
                 # If the search term has multiple words, try to identify the main subject
                 if len(search_terms.split()) > 3:
                     # Look for keywords in our database to focus the search
