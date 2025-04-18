@@ -324,6 +324,12 @@ def process_transcript():
                     if "endure to the end" in search_terms_lower:
                         search_terms = "enduring to the end"
                         logger.info("Search term contains 'endure to the end', refined to 'enduring to the end'")
+                    elif "endurance test" in search_terms_lower:
+                        search_terms = "endurance is the test"
+                        logger.info("Search term contains 'endurance test', refined to 'endurance is the test'")
+                    elif "endurance" in search_terms_lower and "consecration" in search_terms_lower:
+                        search_terms = "endurance is consecration"
+                        logger.info("Search term contains both 'endurance' and 'consecration', refined to 'endurance is consecration'")
                     elif "endure" in search_terms_lower and "endurance" not in search_terms_lower:
                         search_terms = "endurance"
                         logger.info("Search term contains 'endure', refined to 'endurance'")
@@ -637,6 +643,12 @@ def simulate_voice_interaction():
                 if "endure to the end" in search_terms_lower:
                     search_terms = "enduring to the end"
                     logger.info("Search term contains 'endure to the end', refined to 'enduring to the end'")
+                elif "endurance test" in search_terms_lower:
+                    search_terms = "endurance is the test"
+                    logger.info("Search term contains 'endurance test', refined to 'endurance is the test'")
+                elif "endurance" in search_terms_lower and "consecration" in search_terms_lower:
+                    search_terms = "endurance is consecration"
+                    logger.info("Search term contains both 'endurance' and 'consecration', refined to 'endurance is consecration'")
                 elif "endure" in search_terms_lower and "endurance" not in search_terms_lower:
                     search_terms = "endurance"
                     logger.info("Search term contains 'endure', refined to 'endurance'")
