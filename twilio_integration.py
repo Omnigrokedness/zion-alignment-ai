@@ -253,25 +253,26 @@ def process_transcript():
             # If it looks like a question, try to find relevant information
             elif "?" in transcript or transcript.lower().startswith("what") or transcript.lower().startswith("how") or transcript.lower().startswith("why"):
                 try:
-                    # Search for relevant truths
-                    from truth_store import search_truths
-                    from flask import request as flask_request
+                    # Directly search the database for relevant truths
+                    search_terms = transcript.lower().replace("?", "").replace("what is", "").replace("tell me about", "").strip()
                     
-                    class MockRequest:
-                        args = {"query": transcript, "type": "text", "limit": "3"}
+                    # Log what we're searching for
+                    logger.info(f"Searching for: '{search_terms}'")
                     
-                    # Call the search function
-                    original_request = flask_request
-                    flask_request = MockRequest()
-                    search_response = search_truths()
-                    flask_request = original_request
+                    # Perform a simple text search
+                    from models import Truth
                     
-                    if search_response and isinstance(search_response, dict):
-                        results = search_response.get("results", [])
-                        if results:
-                            # Found some relevant information
-                            truth_content = results[0].get("content", "")
-                            response = f"Based on what I know: {truth_content}"
+                    # Search in the truth content
+                    results = Truth.query.filter(Truth.content.ilike(f'%{search_terms}%')).limit(3).all()
+                    
+                    if results:
+                        # Found relevant information
+                        truth_content = results[0].content
+                        response = f"Based on what I know: {truth_content}"
+                        logger.info(f"Found truth: {truth_content}")
+                    else:
+                        logger.info(f"No truths found for '{search_terms}'")
+                        response = f"I don't have specific information about {search_terms} yet. You can contribute this truth by saying 'Store this truth: ' followed by what you know."
                 except Exception as search_error:
                     logger.error(f"Error searching truths: {search_error}")
             
@@ -449,9 +450,11 @@ def simulate_voice_interaction():
         if "store this truth" in text.lower() or "remember this" in text.lower():
             # Extract the truth content
             if "store this truth" in text.lower():
-                truth_content = text.lower().split("store this truth", 1)[1].strip()
+                truth_content = text.split("store this truth", 1)[1].strip()
+            elif "Store this truth" in text:
+                truth_content = text.split("Store this truth", 1)[1].strip()
             else:
-                truth_content = text.lower().split("remember this", 1)[1].strip()
+                truth_content = text.split("remember this", 1)[1].strip()
             
             # Store the truth in our database
             try:
@@ -472,25 +475,26 @@ def simulate_voice_interaction():
         # If it looks like a question, try to find relevant information
         elif "?" in text or text.lower().startswith("what") or text.lower().startswith("how") or text.lower().startswith("why"):
             try:
-                # Search for relevant truths
-                from truth_store import search_truths
-                from flask import request as flask_request
+                # Directly search the database for relevant truths
+                search_terms = text.lower().replace("?", "").replace("what is", "").replace("tell me about", "").strip()
                 
-                class MockRequest:
-                    args = {"query": text, "type": "text", "limit": "3"}
+                # Log what we're searching for
+                logger.info(f"Searching for: '{search_terms}'")
                 
-                # Call the search function
-                original_request = flask_request
-                flask_request = MockRequest()
-                search_response = search_truths()
-                flask_request = original_request
+                # Perform a simple text search
+                from models import Truth
                 
-                if search_response and isinstance(search_response, dict):
-                    results = search_response.get("results", [])
-                    if results:
-                        # Found some relevant information
-                        truth_content = results[0].get("content", "")
-                        response = f"Based on what I know: {truth_content}"
+                # Search in the truth content
+                results = Truth.query.filter(Truth.content.ilike(f'%{search_terms}%')).limit(3).all()
+                
+                if results:
+                    # Found relevant information
+                    truth_content = results[0].content
+                    response = f"Based on what I know: {truth_content}"
+                    logger.info(f"Found truth: {truth_content}")
+                else:
+                    logger.info(f"No truths found for '{search_terms}'")
+                    response = f"I don't have specific information about {search_terms} yet. You can contribute this truth by saying 'Store this truth: ' followed by what you know."
             except Exception as search_error:
                 logger.error(f"Error searching truths: {search_error}")
         
