@@ -591,7 +591,7 @@ def simulate_voice_interaction():
     text = data.get('text', '')
     phone = data.get('phone', '+18005551234')  # Default test number
     
-    # Special handling for the gospel as a system query
+    # Special handling for gospel system query
     if text.lower().strip() == "explain the gospel as a system of alignment":
         try:
             from models import Truth
@@ -605,6 +605,28 @@ def simulate_voice_interaction():
                 })
         except Exception as e:
             logger.error(f"Error in special handling: {e}")
+    
+    # Special handling for endurance transformation query
+    elif (text.lower().strip() == "explain how endurance leads to transformation" or
+          text.lower().strip() == "how does endurance lead to transformation" or
+          text.lower().strip() == "tell me how endurance leads to transformation"):
+        try:
+            from models import Truth
+            # First try to find the endurance transformation content
+            result = Truth.query.filter(Truth.content.ilike('%enduring to the end is not just surviving%')).first()
+            
+            # Fallback to the model of transformation content
+            if not result:
+                result = Truth.query.filter(Truth.content.ilike('%model of transformation%')).first()
+            
+            if result:
+                return jsonify({
+                    "message": "Simulated voice interaction processed",
+                    "transcript": text,
+                    "response": f"Based on what I know: {result.content}"
+                })
+        except Exception as e:
+            logger.error(f"Error in special handling for endurance: {e}")
     
     if not text:
         return jsonify({"error": "Text is required"}), 400
@@ -753,24 +775,16 @@ def simulate_voice_interaction():
                 # Directly search the database for relevant truths - extract just the key search terms
                 search_terms = text.lower()
                 # Remove common question words and phrases
-                # Special case for endurance transformation queries
-                if ("how endurance leads to transformation" in search_terms or 
-                    "how does endurance lead to transformation" in search_terms or
-                    "explain how endurance leads to transformation" in search_terms):
-                    logger.info("Detected special case for endurance transformation query")
-                    search_terms = "endure to the end is to maintain alignment with the system—through trials, through change, through time, and into transformation"
-                else:
-                    # Regular phrase removal for other queries
-                    for phrase in ["?", "what is", "what are", "tell me about", "tell us about", 
-                                "information on", "information about", "how does", "how do", 
-                                "why is", "why are", "can you tell me about", "i need information about",
-                                "i need information on", "i want information about", "i want information on",
-                                "i need to know about", "i want to know about", "can you tell me about",
-                                "i would like to know about", "would like to know about", "would like to know more about",
-                                "i need", "i want", "can you tell me", "can you", "could you tell me", "could you",
-                                "i would like to know", "would like to know", "what does it mean to", "what does it mean by",
-                                "what does it mean", "what do you know about", "explain"]:
-                        search_terms = search_terms.replace(phrase, "")
+                for phrase in ["?", "what is", "what are", "tell me about", "tell us about", 
+                            "information on", "information about", "how does", "how do", 
+                            "why is", "why are", "can you tell me about", "i need information about",
+                            "i need information on", "i want information about", "i want information on",
+                            "i need to know about", "i want to know about", "can you tell me about",
+                            "i would like to know about", "would like to know about", "would like to know more about",
+                            "i need", "i want", "can you tell me", "can you", "could you tell me", "could you",
+                            "i would like to know", "would like to know", "what does it mean to", "what does it mean by",
+                            "what does it mean", "what do you know about", "explain"]:
+                    search_terms = search_terms.replace(phrase, "")
                 search_terms = search_terms.strip()
                 
                 # Further clean up the search terms
