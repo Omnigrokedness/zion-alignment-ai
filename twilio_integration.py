@@ -732,6 +732,8 @@ def simulate_voice_interaction():
                 
                 # Check for specific theological concepts that need to be handled specially
                 specific_concept_searches = {
+                    "faith": "Faith is not blind belief. It is intentional alignment with unseen truth.",
+                    "repentance": "Repentance is not guilt management. It is not a cycle of shame.",
                     "pattern of faith": "pattern of faith in alma 32",
                     "elements of repentance": "five elements of repentance",
                     "baptismal covenant": "baptismal covenant",
@@ -739,6 +741,7 @@ def simulate_voice_interaction():
                     "gift of the holy ghost": "gift of the holy ghost",
                     "enduring to the end": "enduring to the end",
                     "gospel system": "gospel system",
+                    "baptism": "Baptism is not a ritual.",
                 }
                 
                 # Check if we're dealing with a known theological concept
