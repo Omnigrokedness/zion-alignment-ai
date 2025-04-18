@@ -292,6 +292,10 @@ def process_transcript():
                     if results:
                         # Found relevant information
                         truth_content = results[0].content
+                        # Clean the truth content from any leading colon or formatting issues
+                        if truth_content.startswith(":"):
+                            truth_content = truth_content[1:].strip()
+                            
                         response = f"Based on what I know: {truth_content}"
                         logger.info(f"Found truth: {truth_content}")
                     else:
@@ -541,6 +545,10 @@ def simulate_voice_interaction():
                 if results:
                     # Found relevant information
                     truth_content = results[0].content
+                    # Clean the truth content from any leading colon or formatting issues
+                    if truth_content.startswith(":"):
+                        truth_content = truth_content[1:].strip()
+                        
                     response = f"Based on what I know: {truth_content}"
                     logger.info(f"Found truth: {truth_content}")
                 else:
