@@ -503,12 +503,48 @@ def test_voice():
     
     return Response(str(resp), mimetype='text/xml')
 
+@twilio_bp.route('/get_gospel_system', methods=['GET'])
+def get_gospel_system():
+    """Retrieve information about the gospel as a system of alignment"""
+    try:
+        from models import Truth
+        result = Truth.query.filter(Truth.content.ilike('%gospel of Jesus Christ is a living system%')).first()
+        
+        if result:
+            return jsonify({
+                "success": True,
+                "content": result.content
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "message": "No content found about the gospel system"
+            })
+    except Exception as e:
+        logger.error(f"Error retrieving gospel system info: {e}")
+        return jsonify({"error": str(e)}), 500
+
 @twilio_bp.route('/simulate', methods=['POST'])
 def simulate_voice_interaction():
     """Simulate a voice interaction for testing purposes"""
     data = request.json
     text = data.get('text', '')
     phone = data.get('phone', '+18005551234')  # Default test number
+    
+    # Special handling for the gospel as a system query
+    if text.lower().strip() == "explain the gospel as a system of alignment":
+        try:
+            from models import Truth
+            result = Truth.query.filter(Truth.content.ilike('%gospel of Jesus Christ is a living system%')).first()
+            
+            if result:
+                return jsonify({
+                    "message": "Simulated voice interaction processed",
+                    "transcript": text,
+                    "response": f"Based on what I know: {result.content}"
+                })
+        except Exception as e:
+            logger.error(f"Error in special handling: {e}")
     
     if not text:
         return jsonify({"error": "Text is required"}), 400
@@ -701,6 +737,11 @@ def simulate_voice_interaction():
                     search_terms = "living system of divine alignment"
                     logger.info("Found 'gospel as a system of alignment' query, refined to specialized search")
                 
+                # Special handling for gospel transformation queries
+                elif ("gospel" in search_terms_lower or "system" in search_terms_lower) and "transform" in search_terms_lower:
+                    search_terms = "model of transformation"
+                    logger.info("Found gospel transformation query, refined to specialized search")
+                
                 # If the search term has multiple words, try to identify the main subject
                 if len(search_terms.split()) > 3:
                     # Look for keywords in our database to focus the search
@@ -749,6 +790,8 @@ def simulate_voice_interaction():
                     "baptism": "Baptism is not a ritual.",
                     "gospel as a system": "gospel of Jesus Christ is a living system",
                     "system of alignment": "living system of divine alignment",
+                    "model of transformation": "model of transformation",
+                    "transform": "model of transformation",
                 }
                 
                 # Check if we're dealing with a known theological concept
